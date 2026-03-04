@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sesión 4 - Consolidación FASE 1 + Mini-proyecto Calculadora | SENA ADSO</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Nunito:wght@400;600;700;800;900&display=swap');
+
+  :root {
+    --verde: #39a900; --verde-dark: #2d8400; --verde-light: #e8f5e0;
+    --naranja: #ff6b00; --naranja-light: #fff3e8;
+    --negro: #1a1a2e; --gris: #f4f6f9;
+    --azul: #0066cc; --morado: #7c3aed;
+    --rojo: #dc2626; --amarillo: #f59e0b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Nunito',sans-serif;
+    background:#0a0a1a;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    min-height:100vh; overflow:hidden;
+  }
+
+  /* ── NAV ── */
+  #nav {
+    position:fixed; bottom:0; left:0; right:0;
+    display:flex; align-items:center; justify-content:center;
+    gap:clamp(8px,1.5vw,16px);
+    padding:clamp(8px,1.5vh,14px) 20px;
+    background:rgba(10,10,26,0.97);
+    backdrop-filter:blur(10px);
+    border-top:2px solid var(--verde); z-index:100;
+  }
+  #nav button {
+    font-family:'Nunito',sans-serif; font-weight:700;
+    font-size:clamp(13px,1.4vw,16px);
+    padding:clamp(6px,1vh,10px) clamp(14px,2vw,24px);
+    border:none; border-radius:8px; cursor:pointer; transition:all .2s;
+  }
+  #btn-prev { background:#333; color:#fff; }
+  #btn-next { background:var(--verde); color:#fff; }
+  #btn-prev:hover { background:#555; }
+  #btn-next:hover { background:var(--verde-dark); }
+  #slide-counter { color:#aaa; font-size:clamp(12px,1.3vw,15px); font-weight:600; min-width:90px; text-align:center; }
+  #progress-bar { position:fixed; top:0; left:0; height:4px; background:linear-gradient(90deg,var(--verde),var(--naranja)); transition:width .4s ease; z-index:200; }
+
+  /* ── SLIDE ── */
+  #slides-wrapper {
+    width:100vw; height:calc(100vh - 60px);
+    display:flex; align-items:center; justify-content:center;
+    padding:clamp(8px,2vh,20px);
+  }
+  .slide {
+    display:none; width:min(900px,98vw);
+    max-height:calc(100vh - 80px); overflow-y:auto;
+    background:#ffffff; border-radius:16px;
+    padding:clamp(20px,4vw,44px) clamp(20px,5vw,56px);
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    animation:fadeSlide .35s ease;
+    scrollbar-width:thin; scrollbar-color:var(--verde) transparent;
+  }
+  .slide.active { display:block; }
+  @keyframes fadeSlide { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── PORTADA ── */
+  .slide-header {
+    background:linear-gradient(135deg,var(--negro) 0%,#16213e 100%);
+    color:#fff; text-align:center;
+    padding:clamp(30px,6vh,60px) clamp(20px,5vw,50px);
+  }
+  .sena-badge { display:inline-block; background:var(--verde); color:#fff; font-size:clamp(11px,1.2vw,13px); font-weight:800; letter-spacing:2px; text-transform:uppercase; padding:6px 16px; border-radius:20px; margin-bottom:16px; }
+  .slide-header h1 { font-size:clamp(26px,4.5vw,52px); font-weight:900; line-height:1.15; margin-bottom:12px; background:linear-gradient(135deg,#fff 40%,var(--verde)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .slide-header .subtitle { font-size:clamp(14px,1.8vw,20px); color:rgba(255,255,255,0.75); margin-bottom:20px; }
+  .slide-header .meta { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; font-size:clamp(12px,1.3vw,14px); }
+  .slide-header .meta span { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); padding:5px 14px; border-radius:20px; color:rgba(255,255,255,0.85); }
+
+  /* ── TITLES ── */
+  .slide-title { display:flex; align-items:center; gap:12px; margin-bottom:clamp(14px,2.5vh,24px); padding-bottom:14px; border-bottom:3px solid var(--verde); }
+  .slide-title .icon { font-size:clamp(24px,3.5vw,36px); }
+  .slide-title h2 { font-size:clamp(20px,3vw,32px); font-weight:900; color:var(--negro); line-height:1.2; }
+  .slide-title .tag { margin-left:auto; font-size:clamp(10px,1.2vw,12px); font-weight:800; text-transform:uppercase; letter-spacing:1px; padding:4px 12px; border-radius:12px; white-space:nowrap; }
+  .tag-teoria   { background:var(--verde-light); color:var(--verde-dark); border:1.5px solid var(--verde); }
+  .tag-practica { background:var(--naranja-light); color:var(--naranja); border:1.5px solid var(--naranja); }
+  .tag-debug    { background:#fde8e8; color:var(--rojo); border:1.5px solid var(--rojo); }
+  .tag-proyecto { background:#ede9fe; color:var(--morado); border:1.5px solid var(--morado); }
+  .tag-verif    { background:#d4edda; color:#155724; border:1.5px solid #28a745; }
+
+  p { font-size:clamp(13px,1.6vw,17px); line-height:1.65; color:#333; margin-bottom:10px; }
+
+  /* ── CODE ── */
+  .code-block { background:#1a1a2e; border-radius:10px; padding:clamp(12px,2vh,20px) clamp(14px,2vw,22px); margin:12px 0; border-left:4px solid var(--verde); overflow-x:auto; }
+  .code-block .code-label { font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--verde); margin-bottom:8px; display:block; }
+  .code-block pre { font-family:'JetBrains Mono',monospace; font-size:clamp(12px,1.5vw,14px); line-height:1.7; color:#e0e0e0; white-space:pre; }
+  .kw{color:#c792ea} .fn{color:#82aaff} .str{color:#c3e88d} .num{color:#f78c6c}
+  .cm{color:#546e7a;font-style:italic} .va{color:#ffcb6b} .op{color:#89ddff} .bl{color:#ff5370}
+
+  /* ── CODE DOBLE ── */
+  .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
+  .compare-col { border-radius:10px; overflow:hidden; }
+  .compare-col .col-header { padding:10px 16px; font-weight:800; font-size:clamp(12px,1.4vw,15px); text-align:center; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .col-error .col-header { background:#ff6b6b22; color:var(--rojo); border-bottom:2px solid var(--rojo); }
+  .col-ok .col-header    { background:var(--verde-light); color:var(--verde-dark); border-bottom:2px solid var(--verde); }
+  .compare-col .code-block { margin:0; border-radius:0 0 10px 10px; border-left:0; }
+  .col-error .code-block { border-top:2px solid var(--rojo); }
+  .col-ok .code-block    { border-top:2px solid var(--verde); }
+
+  /* ── INFO BOXES ── */
+  .info-box { border-radius:10px; padding:clamp(12px,2vh,18px) clamp(14px,2vw,20px); margin:12px 0; display:flex; gap:12px; align-items:flex-start; }
+  .info-box .box-icon { font-size:clamp(20px,2.5vw,28px); flex-shrink:0; margin-top:2px; }
+  .info-box.tip    { background:#e8f5e0; border:1.5px solid var(--verde); }
+  .info-box.warn   { background:#fff3e8; border:1.5px solid var(--naranja); }
+  .info-box.danger { background:#fde8e8; border:1.5px solid var(--rojo); }
+  .info-box.morado { background:#ede9fe; border:1.5px solid var(--morado); }
+  .info-box p { margin:0; font-size:clamp(12px,1.4vw,15px); }
+
+  /* ── ESPECIALES ── */
+  .slide-ustedes { background:linear-gradient(135deg,#fff8e1,#fff3cd); border:3px solid #f59e0b; }
+  .slide-verif   { background:linear-gradient(135deg,#e8f5e0,#d4edda); border:3px solid #28a745; }
+  .slide-pausa   { background:linear-gradient(135deg,#e8f5e0,#f0faf0); border:3px solid var(--verde); text-align:center; }
+  .slide-proyecto{ background:linear-gradient(135deg,#f5f0ff,#ede9fe); border:3px solid var(--morado); }
+
+  .big-emoji { font-size:clamp(40px,8vw,72px); display:block; margin-bottom:12px; }
+  .call-to-action { font-size:clamp(16px,2.5vw,24px); font-weight:900; color:var(--negro); margin-bottom:12px; }
+  .timer-badge { display:inline-flex; align-items:center; gap:6px; background:var(--naranja); color:#fff; font-size:clamp(12px,1.4vw,15px); font-weight:800; padding:6px 14px; border-radius:20px; margin:8px 0; }
+
+  .instruction-box { background:rgba(255,255,255,0.8); border-radius:12px; padding:clamp(12px,2vh,20px) clamp(14px,2.5vw,22px); margin:12px 0; text-align:left; }
+  .instruction-box li { font-size:clamp(13px,1.6vw,17px); font-weight:600; color:#333; margin:8px 0; list-style:none; padding-left:4px; }
+  .instruction-box li::before { content:'▶ '; color:var(--naranja); }
+
+  /* ── AGENDA ── */
+  .agenda-list { list-style:none; margin:14px 0; }
+  .agenda-list li { display:flex; align-items:center; gap:14px; padding:clamp(10px,1.5vh,16px) clamp(12px,2vw,18px); margin:8px 0; border-radius:10px; font-size:clamp(13px,1.6vw,17px); font-weight:700; border:2px solid transparent; }
+  .agenda-list li.teoria   { background:var(--verde-light); border-color:var(--verde); color:var(--verde-dark); }
+  .agenda-list li.practica { background:var(--naranja-light); border-color:var(--naranja); color:#c05000; }
+  .agenda-list li.debug    { background:#fde8e8; border-color:var(--rojo); color:var(--rojo); }
+  .agenda-list li.proyecto { background:#ede9fe; border-color:var(--morado); color:var(--morado); }
+  .agenda-list li.descanso { background:#f3f4f6; border-color:#d1d5db; color:#555; }
+  .agenda-list .time { font-family:'JetBrains Mono',monospace; font-size:clamp(11px,1.3vw,14px); min-width:110px; opacity:.75; }
+
+  /* ── CHECKLIST ── */
+  .checklist { list-style:none; margin:12px 0; }
+  .checklist li { display:flex; align-items:flex-start; gap:10px; font-size:clamp(13px,1.5vw,16px); padding:8px 12px; margin:5px 0; background:var(--gris); border-radius:8px; border-left:4px solid var(--verde); }
+  .checklist .check { font-size:1.2em; flex-shrink:0; }
+
+  /* ── ERRORES GRID ── */
+  .error-grid { display:grid; grid-template-columns:1fr; gap:14px; margin:14px 0; }
+  .error-card { border-radius:12px; overflow:hidden; border:2px solid #f0f0f0; }
+  .error-card .error-head { background:#fde8e8; padding:10px 16px; font-weight:800; font-size:clamp(13px,1.5vw,16px); color:var(--rojo); display:flex; align-items:center; gap:8px; border-bottom:2px solid var(--rojo); }
+  .error-card .fix-head { background:var(--verde-light); padding:10px 16px; font-weight:800; font-size:clamp(13px,1.5vw,16px); color:var(--verde-dark); display:flex; align-items:center; gap:8px; border-bottom:2px solid var(--verde); }
+  .error-card .code-block { margin:0; border-radius:0; border-left:0; }
+
+  /* ── PEP8 TABLE ── */
+  .pep-table { width:100%; border-collapse:collapse; margin:12px 0; font-size:clamp(12px,1.4vw,15px); }
+  .pep-table th { background:var(--negro); color:#fff; padding:10px 14px; text-align:left; font-family:'Nunito',sans-serif; }
+  .pep-table td { padding:10px 14px; border-bottom:1px solid #eee; vertical-align:top; }
+  .pep-table tr:nth-child(even) { background:#f9fafb; }
+  .pep-table td:first-child { font-weight:700; color:var(--verde-dark); width:35%; }
+  .mono { font-family:'JetBrains Mono',monospace; font-size:.9em; }
+
+  /* ── PROYECTO PASOS ── */
+  .paso-proyecto { display:flex; gap:16px; align-items:flex-start; background:#ffffff; border:2px solid #ede9fe; border-radius:12px; padding:clamp(14px,2vh,20px); margin:10px 0; }
+  .paso-num-proy { width:40px; height:40px; border-radius:50%; background:var(--morado); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Nunito',sans-serif; font-weight:900; font-size:18px; flex-shrink:0; }
+  .paso-content h4 { font-size:clamp(14px,1.7vw,17px); font-weight:800; color:var(--negro); margin-bottom:6px; }
+  .paso-content p  { font-size:clamp(12px,1.4vw,15px); color:#555; margin:0; }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="slides-wrapper">
+
+  <!-- ╔══ SLIDE 1 — PORTADA ══╗ -->
+  <div class="slide slide-header active" id="s1">
+    <div class="sena-badge">🏫 SENA · Centro Agroempresarial · Garzón</div>
+    <h1>Consolidación FASE 1<br>+ Mini-proyecto: Calculadora</h1>
+    <div class="subtitle">🐍 Sesión 4 · Cierre de FASE 1: Fundamentos de Python</div>
+    <div class="meta">
+      <span>📅 Miércoles 25 Feb 2026</span>
+      <span>⏰ 6:30 – 10:30 PM</span>
+      <span>🎯 Competencia 220501093</span>
+      <span>👨‍💻 ADSO · Ficha 3229944</span>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 2 — AGENDA ══╗ -->
+  <div class="slide" id="s2">
+    <div class="slide-title">
+      <span class="icon">📋</span>
+      <h2>¿Qué haremos hoy?</h2>
+      <span class="tag tag-teoria">Sesión 4 · Cierre FASE 1</span>
+    </div>
+    <ul class="agenda-list">
+      <li class="teoria"><span class="time">6:30 – 7:00</span>🔄 Repaso exprés sesiones 2 y 3 — preguntas abiertas</li>
+      <li class="teoria"><span class="time">7:00 – 7:45</span>📐 PEP 8 básico — convenciones de código en Python</li>
+      <li class="debug"><span class="time">7:45 – 8:30</span>🐛 Debugging — los 5 errores más frecuentes y cómo resolverlos</li>
+      <li class="descanso"><span class="time">8:30 – 8:45</span>☕ DESCANSO · 15 minutos</li>
+      <li class="proyecto"><span class="time">8:45 – 10:20</span>🧮 MINI-PROYECTO: Calculadora paso a paso</li>
+      <li class="verif"><span class="time">10:20 – 10:30</span>✅ Verificación + Preview FASE 2</li>
+    </ul>
+    <div class="info-box morado">
+      <span class="box-icon">🏆</span>
+      <p><strong>Meta de hoy:</strong> Cerrar FASE 1 construyendo una <strong>calculadora completa con menú</strong> — el primer programa real del curso. Usarás absolutamente todo lo aprendido en las sesiones 2 y 3.</p>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 3 — REPASO S2+S3 ══╗ -->
+  <div class="slide" id="s3">
+    <div class="slide-title">
+      <span class="icon">🔄</span>
+      <h2>Repaso FASE 1 — Todo junto</h2>
+      <span class="tag tag-teoria">10 min</span>
+    </div>
+    <p>Antes de crear la calculadora, confirmamos que tenemos todos los bloques:</p>
+    <ul class="checklist">
+      <li><span class="check">📦</span> <strong>Sesión 2:</strong> Variables (<code style="font-family:'JetBrains Mono';background:#f0f0f0;padding:1px 5px;border-radius:3px">int · float · str · bool</code>), type(), casting, operadores</li>
+      <li><span class="check">📥</span> <strong>Sesión 3:</strong> <code style="font-family:'JetBrains Mono';background:#f0f0f0;padding:1px 5px;border-radius:3px">input()</code> — recibir datos del usuario, convertir con <code style="font-family:'JetBrains Mono';background:#f0f0f0;padding:1px 5px;border-radius:3px">int()/float()</code></li>
+      <li><span class="check">✨</span> <strong>Sesión 3:</strong> f-strings — formatear salida: <code style="font-family:'JetBrains Mono';background:#f0f0f0;padding:1px 5px;border-radius:3px">f"Texto {variable:.2f}"</code></li>
+      <li><span class="check">🔄</span> <strong>Sesión 3:</strong> Estructura ENTRADA → PROCESO → SALIDA</li>
+      <li><span class="check">💬</span> <strong>Hoy:</strong> PEP 8, debugging y el mini-proyecto calculadora</li>
+    </ul>
+    <div class="info-box warn">
+      <span class="box-icon">❓</span>
+      <p><strong>Turno de preguntas:</strong> ¿Qué concepto de las sesiones 2 o 3 todavía genera dudas? Este es el momento. El mini-proyecto depende de que todos partan de la misma base.</p>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 4 — PEP 8 ══╗ -->
+  <div class="slide" id="s4">
+    <div class="slide-title">
+      <span class="icon">📐</span>
+      <h2>PEP 8 — Código que se puede leer</h2>
+      <span class="tag tag-teoria">Teoría</span>
+    </div>
+    <p><strong>PEP 8</strong> es la guía oficial de estilo para Python. No es obligatoria, pero <strong>todo el mundo profesional la usa</strong>. Aplicarla hace que tu código sea más legible y fácil de mantener.</p>
+    <table class="pep-table">
+      <thead><tr><th>Regla</th><th>❌ Incorrecto</th><th>✅ Correcto</th></tr></thead>
+      <tbody>
+        <tr><td>Nombres de variables</td><td class="mono">precioTotal, PrecioTotal</td><td class="mono">precio_total</td></tr>
+        <tr><td>Constantes</td><td class="mono">iva = 0.19</td><td class="mono">IVA = 0.19</td></tr>
+        <tr><td>Espacios alrededor de =</td><td class="mono">x=5+3</td><td class="mono">x = 5 + 3</td></tr>
+        <tr><td>Líneas en blanco</td><td>Todo pegado sin separar</td><td>Sección entrada / proceso / salida separadas</td></tr>
+        <tr><td>Líneas largas</td><td>Una línea de 150+ caracteres</td><td>Máximo ~79 caracteres por línea</td></tr>
+        <tr><td>Comentarios</td><td class="mono">#esto es malo</td><td class="mono"># Esto es correcto (espacio)</td></tr>
+        <tr><td>Comillas</td><td>Mezclar " y '</td><td>Elegir uno y ser consistente</td></tr>
+      </tbody>
+    </table>
+    <div class="info-box tip">
+      <span class="box-icon">💡</span>
+      <p><strong>Atajo en VSCode:</strong> La extensión <strong>Pylance</strong> subraya en amarillo cuando rompes PEP 8. También puedes usar <code style="font-family:'JetBrains Mono'">Shift+Alt+F</code> (Win) / <code style="font-family:'JetBrains Mono'">Shift+Option+F</code> (Mac) para formatear automáticamente.</p>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 5 — PEP 8 CÓDIGO ══╗ -->
+  <div class="slide" id="s5">
+    <div class="slide-title">
+      <span class="icon">🧹</span>
+      <h2>PEP 8 — Antes y después</h2>
+      <span class="tag tag-teoria">Ejemplo</span>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-col col-error">
+        <div class="col-header">❌ Sin PEP 8 — difícil de leer</div>
+        <div class="code-block">
+          <pre><span class="va">n</span><span class="op">=</span><span class="fn">input</span>(<span class="str">"nombre:"</span>)
+<span class="va">e</span><span class="op">=</span><span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"edad:"</span>))
+<span class="va">p</span><span class="op">=</span><span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"peso:"</span>))
+<span class="va">a</span><span class="op">=</span><span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"altura:"</span>))
+<span class="va">imc</span><span class="op">=</span><span class="va">p</span><span class="op">/</span><span class="va">a</span><span class="op">**</span><span class="num">2</span>
+<span class="fn">print</span>(<span class="str">f"hola {<span class="va">n</span>} tu imc es {<span class="va">imc</span>}"</span>)</pre>
+        </div>
+      </div>
+      <div class="compare-col col-ok">
+        <div class="col-header">✅ Con PEP 8 — limpio y profesional</div>
+        <div class="code-block">
+          <pre><span class="cm"># ── ENTRADA ──</span>
+<span class="va">nombre</span>  <span class="op">=</span> <span class="fn">input</span>(<span class="str">"Nombre: "</span>)
+<span class="va">edad</span>    <span class="op">=</span> <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Edad: "</span>))
+<span class="va">peso</span>    <span class="op">=</span> <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Peso (kg): "</span>))
+<span class="va">altura</span>  <span class="op">=</span> <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Altura (m): "</span>))
+
+<span class="cm"># ── PROCESO ──</span>
+<span class="va">imc</span> <span class="op">=</span> <span class="va">peso</span> <span class="op">/</span> <span class="va">altura</span> <span class="op">**</span> <span class="num">2</span>
+
+<span class="cm"># ── SALIDA ──</span>
+<span class="fn">print</span>(<span class="str">f"Hola {<span class="va">nombre</span>}, tu IMC es {<span class="va">imc</span>:.2f}"</span>)</pre>
+        </div>
+      </div>
+    </div>
+    <div class="info-box tip">
+      <span class="box-icon">🐍</span>
+      <p>El código se <strong>lee muchas más veces de las que se escribe</strong>. Un código limpio te ahorra horas de trabajo en el futuro. Adopta PEP 8 desde el primer día.</p>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 6 — DEBUGGING ══╗ -->
+  <div class="slide" id="s6">
+    <div class="slide-title">
+      <span class="icon">🐛</span>
+      <h2>Los 5 errores más frecuentes</h2>
+      <span class="tag tag-debug">Debugging</span>
+    </div>
+    <p>Aprende a <strong>leer el mensaje de error</strong>. Python siempre te dice qué falló y en qué línea. No le temas al error rojo — es tu mejor profesor.</p>
+
+    <div class="error-grid">
+      <div class="error-card">
+        <div class="error-head">🔴 Error 1: TypeError — str + int</div>
+        <div class="code-block">
+          <pre><span class="va">edad</span> <span class="op">=</span> <span class="fn">input</span>(<span class="str">"Edad: "</span>)
+<span class="fn">print</span>(<span class="str">"En 10 años tendrás "</span> <span class="op">+</span> (<span class="va">edad</span> <span class="op">+</span> <span class="num">10</span>) <span class="op">+</span> <span class="str">" años"</span>)
+<span class="cm"># TypeError: can only concatenate str (not "int") to str</span></pre>
+        </div>
+        <div class="fix-head">✅ Solución</div>
+        <div class="code-block">
+          <pre><span class="va">edad</span> <span class="op">=</span> <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Edad: "</span>))  <span class="cm"># convertir al leer</span>
+<span class="fn">print</span>(<span class="str">f"En 10 años tendrás {<span class="va">edad</span> <span class="op">+</span> <span class="num">10</span>} años"</span>)</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-grid">
+      <div class="error-card">
+        <div class="error-head">🔴 Error 2: NameError — variable sin definir</div>
+        <div class="code-block">
+          <pre><span class="fn">print</span>(<span class="va">resultado</span>)
+<span class="cm"># NameError: name 'resultado' is not defined</span></pre>
+        </div>
+        <div class="fix-head">✅ Solución</div>
+        <div class="code-block">
+          <pre><span class="va">resultado</span> <span class="op">=</span> <span class="num">5</span> <span class="op">*</span> <span class="num">3</span>  <span class="cm"># definir ANTES de usar</span>
+<span class="fn">print</span>(<span class="va">resultado</span>)</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 7 — DEBUGGING 2 ══╗ -->
+  <div class="slide" id="s7">
+    <div class="slide-title">
+      <span class="icon">🐛</span>
+      <h2>Los 5 errores más frecuentes (cont.)</h2>
+      <span class="tag tag-debug">Debugging</span>
+    </div>
+
+    <div class="error-grid">
+      <div class="error-card">
+        <div class="error-head">🔴 Error 3: ValueError — input no convertible</div>
+        <div class="code-block">
+          <pre><span class="va">edad</span> <span class="op">=</span> <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Edad: "</span>))
+<span class="cm"># Usuario escribe "veinte" → ValueError: invalid literal for int()</span></pre>
+        </div>
+        <div class="fix-head">✅ Solución</div>
+        <div class="code-block">
+          <pre><span class="cm"># Guiar al usuario con el mensaje</span>
+<span class="va">edad</span> <span class="op">=</span> <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Edad (ej: 22): "</span>))</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-grid">
+      <div class="error-card">
+        <div class="error-head">🔴 Error 4: ZeroDivisionError</div>
+        <div class="code-block">
+          <pre><span class="va">divisor</span> <span class="op">=</span> <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Divisor: "</span>))
+<span class="va">res</span> <span class="op">=</span> <span class="num">10</span> <span class="op">/</span> <span class="va">divisor</span>   <span class="cm"># si usuario escribe 0 → Error!</span></pre>
+        </div>
+        <div class="fix-head">✅ Solución (tema de Sesión 5 — por ahora avisa en el mensaje)</div>
+        <div class="code-block">
+          <pre><span class="va">divisor</span> <span class="op">=</span> <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Divisor (distinto de 0): "</span>))</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-grid">
+      <div class="error-card">
+        <div class="error-head">🔴 Error 5: SyntaxError — f-string sin la f</div>
+        <div class="code-block">
+          <pre><span class="fn">print</span>(<span class="str">"Hola {nombre}, tienes {edad} años"</span>)
+<span class="cm"># Imprime literalmente: Hola {nombre}, tienes {edad} años</span></pre>
+        </div>
+        <div class="fix-head">✅ Solución</div>
+        <div class="code-block">
+          <pre><span class="fn">print</span>(<span class="str">f"Hola {<span class="va">nombre</span>}, tienes {<span class="va">edad</span>} años"</span>)
+<span class="cm"># La f antes de las comillas activa las llaves {}</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 8 — AHORA USTEDES DEBUGGING ══╗ -->
+  <div class="slide slide-ustedes" id="s8">
+    <div style="text-align:center;margin-bottom:16px">
+      <span class="big-emoji">🐛</span>
+      <div class="call-to-action">AHORA USTEDES — Caza de Bugs</div>
+      <div class="timer-badge">⏱️ 12 minutos</div>
+    </div>
+    <div class="instruction-box">
+      <p style="font-weight:800;color:#444;margin-bottom:8px;font-size:clamp(13px,1.6vw,17px)">Crea <code style="font-family:'JetBrains Mono'">sesion04_bugs.py</code> y corrige los 5 errores:</p>
+      <ul>
+        <li>El archivo tiene 5 bloques de código con errores</li>
+        <li>Tu tarea: identificar el tipo de error y corregirlo</li>
+        <li>Escribe en un comentario qué tipo de error era</li>
+        <li>Ejecuta para verificar que funciona sin errores</li>
+      </ul>
+    </div>
+    <div class="code-block">
+      <span class="code-label">💡 Archivo con bugs — cópialo y corrígelo</span>
+      <pre><span class="cm"># BUG 1 — ¿qué tipo de error?</span>
+<span class="va">nombre</span> <span class="op">=</span> <span class="fn">input</span>(<span class="str">"Nombre: "</span>)
+<span class="fn">print</span>(<span class="str">"Hola " </span><span class="op">+</span> <span class="va">nombre</span> <span class="op">+</span> <span class="str">" tienes "</span> <span class="op">+</span> <span class="num">25</span> <span class="op">+</span> <span class="str">" años"</span>)
+
+<span class="cm"># BUG 2</span>
+<span class="va">precio</span> <span class="op">=</span> <span class="fn">input</span>(<span class="str">"Precio: "</span>)
+<span class="va">total</span>  <span class="op">=</span> <span class="va">precio</span> <span class="op">*</span> <span class="num">3</span>
+<span class="fn">print</span>(<span class="va">total</span>)
+
+<span class="cm"># BUG 3</span>
+<span class="fn">print</span>(<span class="str">"El resultado es: {resultado}"</span>)
+<span class="va">resultado</span> <span class="op">=</span> <span class="num">100</span> <span class="op">/</span> <span class="num">4</span>
+
+<span class="cm"># BUG 4</span>
+<span class="va">n1</span> <span class="op">=</span> <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Nota 1: "</span>))
+<span class="va">n2</span> <span class="op">=</span> <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Nota 2: "</span>))
+<span class="va">promedio</span> <span class="op">=</span> <span class="va">n1</span> <span class="op">+</span> <span class="va">n2</span> <span class="op">/</span> <span class="num">2</span>   <span class="cm"># fórmula incorrecta</span>
+<span class="fn">print</span>(<span class="str">f"Promedio: {<span class="va">promedio</span>}"</span>)
+
+<span class="cm"># BUG 5</span>
+<span class="va">radio</span> <span class="op">=</span> <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Radio del círculo: "</span>))
+<span class="va">area</span>  <span class="op">=</span> <span class="va">PI</span> <span class="op">*</span> <span class="va">radio</span> <span class="op">**</span> <span class="num">2</span></pre>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 9 — DESCANSO ══╗ -->
+  <div class="slide slide-pausa" id="s9">
+    <span class="big-emoji">☕</span>
+    <div class="call-to-action">DESCANSO — 15 minutos</div>
+    <p style="font-size:clamp(15px,2vw,22px);color:#555;margin:10px 0 20px">Al regresar construiremos la calculadora 🧮</p>
+    <ul class="checklist" style="text-align:left;display:inline-block">
+      <li><span class="check">💾</span> Guarda el archivo de bugs con <code style="font-family:'JetBrains Mono'">Ctrl+S</code> / <code style="font-family:'JetBrains Mono'">Cmd+S</code></li>
+      <li><span class="check">⏰</span> Regresamos a las <strong>8:45 PM</strong></li>
+      <li><span class="check">🧮</span> Crea el archivo <code style="font-family:'JetBrains Mono'">sesion04_calculadora.py</code></li>
+    </ul>
+  </div>
+
+  <!-- ╔══ SLIDE 10 — MINI PROYECTO INTRO ══╗ -->
+  <div class="slide slide-proyecto" id="s10">
+    <div class="slide-title">
+      <span class="icon">🧮</span>
+      <h2>Mini-proyecto — Calculadora Profesional</h2>
+      <span class="tag tag-proyecto">MINI-PROYECTO</span>
+    </div>
+    <p>Vamos a construir una calculadora paso a paso. Al final tendrás un programa completo que integra <strong>todo lo de FASE 1</strong>.</p>
+
+    <div class="paso-proyecto">
+      <div class="paso-num-proy">1</div>
+      <div class="paso-content">
+        <h4>Menú de operaciones (entrada estructurada)</h4>
+        <p>Mostrar las opciones disponibles al usuario con print() formateado</p>
+      </div>
+    </div>
+    <div class="paso-proyecto">
+      <div class="paso-num-proy">2</div>
+      <div class="paso-content">
+        <h4>Leer operandos y operación elegida</h4>
+        <p>Usar input() con conversión correcta para los dos números y la opción</p>
+      </div>
+    </div>
+    <div class="paso-proyecto">
+      <div class="paso-num-proy">3</div>
+      <div class="paso-content">
+        <h4>Calcular el resultado</h4>
+        <p>Usar variables intermedias para cada operación: suma, resta, mult, división, potencia, módulo</p>
+      </div>
+    </div>
+    <div class="paso-proyecto">
+      <div class="paso-num-proy">4</div>
+      <div class="paso-content">
+        <h4>Mostrar resultado con f-strings y formato</h4>
+        <p>Reporte visual profesional con la operación realizada y el resultado formateado</p>
+      </div>
+    </div>
+
+    <div class="info-box morado">
+      <span class="box-icon">💜</span>
+      <p><strong>Importante:</strong> Construiremos la calculadora en <strong>4 versiones</strong>, cada una más completa que la anterior. Tú decides hasta qué versión llegar.</p>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 11 — CALCULADORA V1 ══╗ -->
+  <div class="slide" id="s11">
+    <div class="slide-title">
+      <span class="icon">🧮</span>
+      <h2>Calculadora V1 — Base (guiada)</h2>
+      <span class="tag tag-proyecto">Versión 1</span>
+    </div>
+    <p>Primero la versión más simple. Luego la mejoramos juntos.</p>
+    <div class="code-block">
+      <span class="code-label">Python · sesion04_calculadora.py — V1: Lo mínimo funcional</span>
+      <pre><span class="cm">## ============================================</span>
+<span class="cm">## CALCULADORA BÁSICA — SENA ADSO</span>
+<span class="cm">## Sesión 4 · Fase 1 · Ficha 3229944</span>
+<span class="cm">## ============================================</span>
+
+<span class="cm"># ── MENÚ ──</span>
+<span class="fn">print</span>(<span class="str">"╔══════════════════════════╗"</span>)
+<span class="fn">print</span>(<span class="str">"║    🧮 CALCULADORA SENA   ║"</span>)
+<span class="fn">print</span>(<span class="str">"╠══════════════════════════╣"</span>)
+<span class="fn">print</span>(<span class="str">"║  1 → Suma                ║"</span>)
+<span class="fn">print</span>(<span class="str">"║  2 → Resta               ║"</span>)
+<span class="fn">print</span>(<span class="str">"║  3 → Multiplicación      ║"</span>)
+<span class="fn">print</span>(<span class="str">"║  4 → División            ║"</span>)
+<span class="fn">print</span>(<span class="str">"║  5 → Potencia            ║"</span>)
+<span class="fn">print</span>(<span class="str">"║  6 → Módulo (residuo)    ║"</span>)
+<span class="fn">print</span>(<span class="str">"╚══════════════════════════╝"</span>)
+
+<span class="cm"># ── ENTRADA ──</span>
+<span class="va">opcion</span> <span class="op">=</span> <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"\nElige operación (1-6): "</span>))
+<span class="va">num1</span>   <span class="op">=</span> <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Número 1: "</span>))
+<span class="va">num2</span>   <span class="op">=</span> <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Número 2: "</span>))
+
+<span class="cm"># ── PROCESO ──</span>
+<span class="va">suma</span>     <span class="op">=</span> <span class="va">num1</span> <span class="op">+</span> <span class="va">num2</span>
+<span class="va">resta</span>    <span class="op">=</span> <span class="va">num1</span> <span class="op">-</span> <span class="va">num2</span>
+<span class="va">multi</span>    <span class="op">=</span> <span class="va">num1</span> <span class="op">*</span> <span class="va">num2</span>
+<span class="va">division</span> <span class="op">=</span> <span class="va">num1</span> <span class="op">/</span> <span class="va">num2</span>
+<span class="va">potencia</span> <span class="op">=</span> <span class="va">num1</span> <span class="op">**</span> <span class="va">num2</span>
+<span class="va">modulo</span>   <span class="op">=</span> <span class="va">num1</span> <span class="op">%</span> <span class="va">num2</span>
+
+<span class="cm"># ── SALIDA ──</span>
+<span class="fn">print</span>(<span class="str">f"\n{'─'*28}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Suma      : {<span class="va">suma</span>:>10,.4f}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Resta     : {<span class="va">resta</span>:>10,.4f}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Multiplic : {<span class="va">multi</span>:>10,.4f}"</span>)
+<span class="fn">print</span>(<span class="str">f"  División  : {<span class="va">division</span>:>10,.4f}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Potencia  : {<span class="va">potencia</span>:>10,.4f}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Módulo    : {<span class="va">modulo</span>:>10,.4f}"</span>)
+<span class="fn">print</span>(<span class="str">f"{'─'*28}"</span>)</pre>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 12 — CALCULADORA V2 ══╗ -->
+  <div class="slide" id="s12">
+    <div class="slide-title">
+      <span class="icon">🧮</span>
+      <h2>Calculadora V2 — Con resultado seleccionado</h2>
+      <span class="tag tag-proyecto">Versión 2</span>
+    </div>
+    <p>V2 mejora la salida: en lugar de mostrar todo, muestra <strong>solo el resultado de la operación elegida</strong>.</p>
+    <div class="code-block">
+      <span class="code-label">Python · Calculadora V2 — reemplaza la sección SALIDA</span>
+      <pre><span class="cm"># ── SALIDA V2 ── (reemplaza la sección SALIDA de V1)</span>
+<span class="va">operaciones</span> <span class="op">=</span> {
+    <span class="num">1</span>: (<span class="str">"Suma"</span>,           <span class="va">num1</span> <span class="op">+</span> <span class="va">num2</span>, <span class="str">"+"</span>),
+    <span class="num">2</span>: (<span class="str">"Resta"</span>,          <span class="va">num1</span> <span class="op">-</span> <span class="va">num2</span>, <span class="str">"-"</span>),
+    <span class="num">3</span>: (<span class="str">"Multiplicación"</span>, <span class="va">num1</span> <span class="op">*</span> <span class="va">num2</span>, <span class="str">"×"</span>),
+    <span class="num">4</span>: (<span class="str">"División"</span>,       <span class="va">num1</span> <span class="op">/</span> <span class="va">num2</span>, <span class="str">"÷"</span>),
+    <span class="num">5</span>: (<span class="str">"Potencia"</span>,       <span class="va">num1</span> <span class="op">**</span> <span class="va">num2</span>, <span class="str">"^"</span>),
+    <span class="num">6</span>: (<span class="str">"Módulo"</span>,         <span class="va">num1</span> <span class="op">%</span>  <span class="va">num2</span>, <span class="str">"%"</span>),
+}
+
+<span class="va">nombre_op</span>, <span class="va">resultado</span>, <span class="va">simbolo</span> <span class="op">=</span> <span class="va">operaciones</span>[<span class="va">opcion</span>]
+
+<span class="fn">print</span>(<span class="str">f"\n{'='*34}"</span>)
+<span class="fn">print</span>(<span class="str">f"  RESULTADO · {<span class="va">nombre_op</span>.upper()}"</span>)
+<span class="fn">print</span>(<span class="str">f"{'='*34}"</span>)
+<span class="fn">print</span>(<span class="str">f"  {<span class="va">num1</span>:>8,.4f}  {<span class="va">simbolo</span>}"</span>)
+<span class="fn">print</span>(<span class="str">f"  {<span class="va">num2</span>:>8,.4f}"</span>)
+<span class="fn">print</span>(<span class="str">f"  {'─'*16}"</span>)
+<span class="fn">print</span>(<span class="str">f"  {<span class="va">resultado</span>:>8,.4f}  ← resultado"</span>)
+<span class="fn">print</span>(<span class="str">f"{'='*34}"</span>)</pre>
+    </div>
+    <div class="info-box tip">
+      <span class="box-icon">💡</span>
+      <p>Estamos usando un <strong>diccionario</strong> para organizar las operaciones. Lo estudiaremos a fondo en FASE 4 — por ahora solo cópialo y observa cómo funciona.</p>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 13 — CALCULADORA V3 ══╗ -->
+  <div class="slide" id="s13">
+    <div class="slide-title">
+      <span class="icon">🧮</span>
+      <h2>Calculadora V3 — Con conversiones extras</h2>
+      <span class="tag tag-proyecto">Versión 3</span>
+    </div>
+    <p>V3 agrega un <strong>bloque de conversiones</strong> debajo del resultado de la calculadora.</p>
+    <div class="code-block">
+      <span class="code-label">Python · Calculadora V3 — agrega esto al final</span>
+      <pre><span class="cm"># ── CONVERSIONES EXTRAS (agrega después del resultado) ──</span>
+<span class="fn">print</span>(<span class="str">f"\n📐 CONVERSIONES EXTRA:"</span>)
+<span class="fn">print</span>(<span class="str">f"  Num1 en binario  : {<span class="fn">int</span>(<span class="va">num1</span>):b}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Num1 en octal    : {<span class="fn">int</span>(<span class="va">num1</span>):o}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Num1 en hexadec  : {<span class="fn">int</span>(<span class="va">num1</span>):X}"</span>)
+
+<span class="fn">print</span>(<span class="str">f"\n📊 ESTADÍSTICAS:"</span>)
+<span class="va">mayor</span>    <span class="op">=</span> <span class="va">num1</span> <span class="op">&gt;</span> <span class="va">num2</span>
+<span class="va">iguales</span>  <span class="op">=</span> <span class="va">num1</span> <span class="op">==</span> <span class="va">num2</span>
+<span class="va">ambos_pos</span> <span class="op">=</span> <span class="va">num1</span> <span class="op">&gt;</span> <span class="num">0</span> <span class="kw">and</span> <span class="va">num2</span> <span class="op">&gt;</span> <span class="num">0</span>
+<span class="fn">print</span>(<span class="str">f"  Num1 mayor que Num2 : {<span class="va">mayor</span>}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Son iguales         : {<span class="va">iguales</span>}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Ambos positivos     : {<span class="va">ambos_pos</span>}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Num1 es entero      : {<span class="va">num1</span> <span class="op">%</span> <span class="num">1</span> <span class="op">==</span> <span class="num">0</span>}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Num2 es par         : {<span class="fn">int</span>(<span class="va">num2</span>) <span class="op">%</span> <span class="num">2</span> <span class="op">==</span> <span class="num">0</span>}"</span>)</pre>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 14 — CALCULADORA V4 ══╗ -->
+  <div class="slide" id="s14">
+    <div class="slide-title">
+      <span class="icon">🧮</span>
+      <h2>Calculadora V4 — Versión completa y pulida</h2>
+      <span class="tag tag-proyecto">Versión 4 · Final</span>
+    </div>
+    <div class="code-block">
+      <span class="code-label">Python · Calculadora V4 — portada + historial</span>
+      <pre><span class="cm">## ================================================</span>
+<span class="cm">## CALCULADORA PROFESIONAL V4 — SENA ADSO</span>
+<span class="cm">## Sesión 4 · Mini-proyecto FASE 1</span>
+<span class="cm">## ================================================</span>
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+<span class="cm"># ── PORTADA ──</span>
+<span class="va">ahora</span> <span class="op">=</span> datetime.<span class="fn">now</span>().<span class="fn">strftime</span>(<span class="str">"%d/%m/%Y %H:%M"</span>)
+<span class="fn">print</span>(<span class="str">f"\n{'╔'+'═'*34+'╗'}"</span>)
+<span class="fn">print</span>(<span class="str">f"║{'🧮  CALCULADORA PROFESIONAL  🧮':^34}║"</span>)
+<span class="fn">print</span>(<span class="str">f"║{'SENA · ADSO · Ficha 3229944':^34}║"</span>)
+<span class="fn">print</span>(<span class="str">f"║{ahora:^34}║"</span>)
+<span class="fn">print</span>(<span class="str">f"{'╚'+'═'*34+'╝'}\n"</span>)
+
+<span class="cm"># ── ENTRADA DEL USUARIO ──</span>
+<span class="va">usuario</span> <span class="op">=</span> <span class="fn">input</span>(<span class="str">"Tu nombre: "</span>)
+<span class="fn">print</span>(<span class="str">f"\n¡Hola, {<span class="va">usuario</span>}! Elige tu operación:\n"</span>)
+
+<span class="cm"># ... (resto igual que V2 + V3)</span>
+
+<span class="cm"># ── HISTORIAL SIMPLE ──</span>
+<span class="fn">print</span>(<span class="str">f"\n📋 HISTORIAL DE ESTA SESIÓN:"</span>)
+<span class="fn">print</span>(<span class="str">f"  Usuario   : {<span class="va">usuario</span>}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Operación : {<span class="va">num1</span>} {<span class="va">simbolo</span>} {<span class="va">num2</span>} = {<span class="va">resultado</span>:.4f}"</span>)
+<span class="fn">print</span>(<span class="str">f"  Fecha/hora: {<span class="va">ahora</span>}"</span>)
+<span class="fn">print</span>(<span class="str">f"\n¡Gracias por usar la calculadora, {<span class="va">usuario</span>}! 🎉"</span>)</pre>
+    </div>
+    <div class="info-box morado">
+      <span class="box-icon">🚀</span>
+      <p><strong>Nota FASE 2:</strong> En la próxima fase aprenderás <code style="font-family:'JetBrains Mono'">if/elif/else</code>, que te permitirá ejecutar <em>solo</em> la operación elegida — sin calcular todas. Hoy calculamos todas y mostramos la elegida; eso es lo máximo que podemos hacer con los herramientas actuales.</p>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 15 — PRÁCTICA LIBRE ══╗ -->
+  <div class="slide slide-ustedes" id="s15">
+    <div style="text-align:center;margin-bottom:16px">
+      <span class="big-emoji">🚀</span>
+      <div class="call-to-action">¡CONSTRUYE TU CALCULADORA!</div>
+      <div class="timer-badge">⏱️ Hasta las 10:15 PM</div>
+    </div>
+    <div class="instruction-box">
+      <ul>
+        <li>Comienza con <strong>V1</strong> — asegúrate de que funciona</li>
+        <li>Avanza a <strong>V2</strong> — resultado seleccionado con diccionario</li>
+        <li>Agrega <strong>V3</strong> — conversiones y estadísticas</li>
+        <li>Si llegas a <strong>V4</strong> — portada, nombre de usuario e historial</li>
+        <li>Agrega tus propias <strong>mejoras creativas</strong></li>
+        <li>Aplica <strong>PEP 8</strong> en todo el código</li>
+        <li>Documenta con <strong>comentarios</strong> cada sección</li>
+      </ul>
+    </div>
+    <div class="info-box morado">
+      <span class="box-icon">🏆</span>
+      <p><strong>Este es tu primer proyecto real en Python.</strong> No importa a qué versión llegues — lo que importa es que funcione y esté bien documentado. Guárdalo, es la <strong>evidencia de cierre de FASE 1</strong>.</p>
+    </div>
+  </div>
+
+  <!-- ╔══ SLIDE 16 — VERIFICACIÓN ══╗ -->
+  <div class="slide slide-verif" id="s16">
+    <div class="slide-title">
+      <span class="icon">✅</span>
+      <h2>VERIFICACIÓN — Cierre FASE 1</h2>
+      <span class="tag tag-verif">¡Lo lograste!</span>
+    </div>
+    <p>Si puedes hacer todo esto, <strong>FASE 1 está completada</strong>:</p>
+    <ul class="checklist">
+      <li><span class="check">🟢</span> Crear y usar variables con los 4 tipos: <code style="font-family:'JetBrains Mono'">int · float · str · bool</code></li>
+      <li><span class="check">🟢</span> Usar los 7 operadores aritméticos: <code style="font-family:'JetBrains Mono'">+ - * / // % **</code></li>
+      <li><span class="check">🟢</span> Recibir datos del usuario con <code style="font-family:'JetBrains Mono'">input()</code> y convertirlos correctamente</li>
+      <li><span class="check">🟢</span> Formatear salida con f-strings: <code style="font-family:'JetBrains Mono'">f"texto {variable:.2f}"</code></li>
+      <li><span class="check">🟢</span> Estructurar código en ENTRADA → PROCESO → SALIDA</li>
+      <li><span class="check">🟢</span> Aplicar PEP 8: nombres en snake_case, constantes en MAYÚSCULAS, espacios</li>
+      <li><span class="check">🟢</span> Escribir comentarios útiles con <code style="font-family:'JetBrains Mono'">#</code></li>
+      <li><span class="check">🟢</span> Leer e interpretar un mensaje de error (NameError, TypeError, ValueError)</li>
+      <li><span class="check">🟢</span> Construir un programa completo que interactúa con el usuario</li>
+    </ul>
+  </div>
+
+  <!-- ╔══ SLIDE 17 — PREVIEW FASE 2 ══╗ -->
+  <div class="slide slide-header" id="s17">
+    <div class="sena-badge">🚀 Próxima Sesión</div>
+    <h1>FASE 2 · Sesión 5<br>Miércoles 25 Feb ← ya fue<br><span style="-webkit-text-fill-color:#f59e0b">Miércoles 25 Feb</span></h1>
+    <div class="subtitle">🔀 Estructuras Condicionales — if / elif / else</div>
+    <div style="margin-top:24px;text-align:left;max-width:520px;margin-inline:auto">
+      <ul class="checklist">
+        <li><span class="check">🎯</span> La calculadora resolverá <strong>solo la operación elegida</strong></li>
+        <li><span class="check">🎯</span> Tus programas tomarán <strong>decisiones</strong> según los datos</li>
+        <li><span class="check">🎯</span> Aprenderás <code style="font-family:'JetBrains Mono'">if · elif · else</code> con casos reales</li>
+        <li><span class="check">🎯</span> Validación de datos — el primer paso a la robustez</li>
+      </ul>
+    </div>
+    <div class="meta" style="margin-top:24px">
+      <span>💾 Guarda tu calculadora</span>
+      <span>📁 Carpeta: <code style="font-family:'JetBrains Mono';-webkit-text-fill-color:#82aaff">sesion_04/</code></span>
+    </div>
+  </div>
+
+</div><!-- /slides-wrapper -->
+
+<nav id="nav">
+  <button id="btn-prev" onclick="changeSlide(-1)">← Anterior</button>
+  <span id="slide-counter">1 / 17</span>
+  <button id="btn-next" onclick="changeSlide(1)">Siguiente →</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let current = 0;
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, slides.length - 1));
+    slides[current].classList.add('active');
+    slides[current].scrollTop = 0;
+    document.getElementById('slide-counter').textContent = `${current + 1} / ${slides.length}`;
+    document.getElementById('progress-bar').style.width = `${((current + 1) / slides.length) * 100}%`;
+    document.getElementById('btn-prev').disabled = current === 0;
+    document.getElementById('btn-next').textContent = current === slides.length - 1 ? '¡Fin!' : 'Siguiente →';
+  }
+
+  function changeSlide(dir) {
+    if (current + dir >= 0 && current + dir < slides.length) showSlide(current + dir);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') changeSlide(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') changeSlide(-1);
+  });
+
+  showSlide(0);
+</script>
+</body>
+</html>
